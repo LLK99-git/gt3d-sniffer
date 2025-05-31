@@ -6,9 +6,14 @@
 <body>
   <h2>GT3D BLE Sniffer</h2>
   <button onclick="connect()">🔗 Verbinden & Lauschen</button><br><br>
+  <label for="hexInput">📤 HEX senden:</label>
+  <input id="hexInput" type="text" placeholder="z. B. 5A A5 03 20 01" style="width:300px">
+  <button onclick="sendHex()">➡️ Senden</button>
   <pre id="log" style="background:#eee;padding:10px;height:300px;overflow:auto;margin-top:20px;"></pre>
 
   <script>
+    let writeChar = null;
+
     function log(msg) {
       const el = document.getElementById("log");
       el.textContent += msg + "\n";
@@ -38,9 +43,30 @@
             });
             log(`✅ Lausche auf: ${char.uuid}`);
           }
+          if (char.properties.write || char.properties.writeWithoutResponse) {
+            writeChar = char;
+            log(`✍️ Write-Characteristic gefunden: ${char.uuid}`);
+          }
         }
       } catch (error) {
         log("❌ Fehler: " + error);
+      }
+    }
+
+    async function sendHex() {
+      if (!writeChar) {
+        log("⚠️ Keine Write-Characteristic verfügbar!");
+        return;
+      }
+      const input = document.getElementById("hexInput").value.trim();
+      if (!input) return;
+      const bytes = input.split(" ").map(h => parseInt(h, 16));
+      const buffer = new Uint8Array(bytes);
+      try {
+        await writeChar.writeValue(buffer);
+        log("➡️ Gesendet: " + input.toUpperCase());
+      } catch (err) {
+        log("❌ Senden fehlgeschlagen: " + err);
       }
     }
   </script>
