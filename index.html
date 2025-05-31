@@ -1,19 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GT3D BLE Sniffer</title>
+  <title>GT3D Passive BLE Sniffer</title>
 </head>
 <body>
-  <h2>GT3D BLE Sniffer (mit Raw Dump)</h2>
-  <button onclick="connect()">🔗 Verbinden & Lauschen</button><br><br>
-  <label for="hexInput">📤 HEX senden:</label>
-  <input id="hexInput" type="text" placeholder="z. B. 5A A5 03 20 01" style="width:300px">
-  <button onclick="sendHex()">➡️ Senden</button>
+  <h2>GT3D Passive BLE Sniffer (no connect)</h2>
+  <button onclick="scanAndListen()">🔍 Scan & Lauschen</button>
   <pre id="log" style="background:#eee;padding:10px;height:300px;overflow:auto;margin-top:20px;"></pre>
   <a id="download" style="display:block;margin-top:10px;" download="dump.txt">⬇️ Dump herunterladen</a>
 
   <script>
-    let writeChar = null;
     let dump = [];
 
     function log(msg) {
@@ -25,18 +21,23 @@
       document.getElementById("download").href = "data:text/plain;charset=utf-8," + encodeURIComponent(dump.join("\n"));
     }
 
-    async function connect() {
+    async function scanAndListen() {
       try {
         const device = await navigator.bluetooth.requestDevice({
           acceptAllDevices: true,
           optionalServices: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']
         });
 
-        log("🔌 Verbinde mit " + device.name);
+        log("🔍 Gerät ausgewählt: " + device.name);
+
+        device.addEventListener('gattserverdisconnected', () => {
+          log("❌ Verbindung verloren (nicht verbunden oder getrennt)");
+        });
+
         const server = await device.gatt.connect();
         const service = await server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
-
         const characteristics = await service.getCharacteristics();
+
         for (const char of characteristics) {
           if (char.properties.notify) {
             await char.startNotifications();
@@ -46,32 +47,11 @@
                 .map(b => b.toString(16).padStart(2, '0')).join(' ');
               log(`⬇️ [${char.uuid}]: ` + hex);
             });
-            log(`✅ Lausche auf: ${char.uuid}`);
-          }
-          if (char.properties.write || char.properties.writeWithoutResponse) {
-            writeChar = char;
-            log(`✍️ Write-Characteristic gefunden: ${char.uuid}`);
+            log(`👂 Lauscht auf Notify: ${char.uuid}`);
           }
         }
       } catch (error) {
         log("❌ Fehler: " + error);
-      }
-    }
-
-    async function sendHex() {
-      if (!writeChar) {
-        log("⚠️ Keine Write-Characteristic verfügbar!");
-        return;
-      }
-      const input = document.getElementById("hexInput").value.trim();
-      if (!input) return;
-      const bytes = input.split(" ").map(h => parseInt(h, 16));
-      const buffer = new Uint8Array(bytes);
-      try {
-        await writeChar.writeValue(buffer);
-        log("➡️ Gesendet: " + input.toUpperCase());
-      } catch (err) {
-        log("❌ Senden fehlgeschlagen: " + err);
       }
     }
   </script>
