@@ -4,20 +4,25 @@
   <title>GT3D BLE Sniffer</title>
 </head>
 <body>
-  <h2>GT3D BLE Sniffer</h2>
+  <h2>GT3D BLE Sniffer (mit Raw Dump)</h2>
   <button onclick="connect()">🔗 Verbinden & Lauschen</button><br><br>
   <label for="hexInput">📤 HEX senden:</label>
   <input id="hexInput" type="text" placeholder="z. B. 5A A5 03 20 01" style="width:300px">
   <button onclick="sendHex()">➡️ Senden</button>
   <pre id="log" style="background:#eee;padding:10px;height:300px;overflow:auto;margin-top:20px;"></pre>
+  <a id="download" style="display:block;margin-top:10px;" download="dump.txt">⬇️ Dump herunterladen</a>
 
   <script>
     let writeChar = null;
+    let dump = [];
 
     function log(msg) {
       const el = document.getElementById("log");
-      el.textContent += msg + "\n";
+      const line = `[${new Date().toISOString()}] ` + msg;
+      el.textContent += line + "\n";
       el.scrollTop = el.scrollHeight;
+      dump.push(line);
+      document.getElementById("download").href = "data:text/plain;charset=utf-8," + encodeURIComponent(dump.join("\n"));
     }
 
     async function connect() {
