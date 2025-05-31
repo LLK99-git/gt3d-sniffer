@@ -5,8 +5,8 @@
 </head>
 <body>
   <h2>GT3D BLE Sniffer</h2>
-  <button onclick="connect()">🔗 Verbinden & Lauschen</button>
-  <pre id="log" style="background:#eee;padding:10px;height:300px;overflow:auto;margin-top:20px"></pre>
+  <button onclick="connect()">🔗 Verbinden & Lauschen</button><br><br>
+  <pre id="log" style="background:#eee;padding:10px;height:300px;overflow:auto;margin-top:20px;"></pre>
 
   <script>
     function log(msg) {
@@ -18,7 +18,7 @@
     async function connect() {
       try {
         const device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true
+          acceptAllDevices: true,
           optionalServices: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']
         });
 
