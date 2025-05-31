@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GT3D BLE Sniffer</title>
+</head>
+<body>
+  <h2>GT3D BLE Sniffer</h2>
+  <button onclick="connect()">🔗 Verbinden & Lauschen</button>
+  <pre id="log" style="background:#eee;padding:10px;height:300px;overflow:auto;margin-top:20px"></pre>
+
+  <script>
+    function log(msg) {
+      const el = document.getElementById("log");
+      el.textContent += msg + "\n";
+      el.scrollTop = el.scrollHeight;
+    }
+
+    async function connect() {
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix: 'GT' }],
+          optionalServices: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e']
+        });
+
+        log("🔌 Verbinde mit " + device.name);
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
+
+        const characteristics = await service.getCharacteristics();
+        for (const char of characteristics) {
+          if (char.properties.notify) {
+            await char.startNotifications();
+            char.addEventListener('characteristicvaluechanged', event => {
+              const value = event.target.value;
+              const hex = [...new Uint8Array(value.buffer)]
+                .map(b => b.toString(16).padStart(2, '0')).join(' ');
+              log(`⬇️ [${char.uuid}]: ` + hex);
+            });
+            log(`✅ Lausche auf: ${char.uuid}`);
+          }
+        }
+      } catch (error) {
+        log("❌ Fehler: " + error);
+      }
+    }
+  </script>
+</body>
+</html>
